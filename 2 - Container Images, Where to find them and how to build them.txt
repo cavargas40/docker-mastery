@@ -1,0 +1,124 @@
+# What's in an Image (And What Isn't)
+
+-App binaries and dependencies
+-Metadata about the image data and how to run the image
+-Oficial definition: "An image is an ordered collection of root filesystem changes and the corresponding execution parameters for use within a container runtime.
+-Not a complete OS. No kernel, kernel modules (e.g. drivers)
+-Small as a single file (Your app binary) like a golang static binary
+-Big as Ubuntu distro with apt, Apache, PHP, and more installed.
+ 
+# Using Docker hub registry images.
+
+-Basics of Docker Hub (hub.docker.com)
+-Find official and other good public images
+-Download images and basics of image tags
+
+docker image ls
+docker pull nginx
+docker pull nginx:alpine
+
+always format is:
+docker pull <image>:<tag>
+
+-Image layers
+-union file system
+-history and inspect commands
+-copy on write
+
+docker image ls
+docker image history nginx
+-Show layers of changes made in image
+
+docker image inspect nginx
+-Return JSON metadata about the image
+
+# Image and their layers: Review
+
+-Images are made up of file system changes and metadata
+-Each layer is uniquely identified and only stored once on a host
+-This saves storage space on host and transfer time on push/pull
+-A container is just a single read/write layer on top image
+-docker image history and inspect commands can teach us
+
+----------------------------------------------------------
+
+-All about image tags
+-How to upload to Docker Hub
+-Image ID vs Tag
+
+docker image tag --help
+
+<user>/<repo>:<tag>
+Default tag is the latest if not specified
+
+-Official repositories
+-They live at the "root namespace" of the registry, so they don't need account name in front of repo name.
+
+docker pull mysql/mysql-server
+
+docker image tag nginx cavargas40/nginx
+
+docker image push cavargas40/nginx
+-Upload changed layers to a image registry (default is Hub)
+
+docker login <server>
+Defaults to logging in Hub, but you can override by adding server url.
+
+docker image tag cavargas40/nginx cavargas40/nginx:testing
+docker image ls
+docker push cavargas40/nginx:testing
+-here the layers are up, so you save time...
+
+if you dont trust the machine, always use
+docker logout
+
+# Building images - Docker File Basics
+
+in the path: dockerfile/sample-1/
+To build a Image with a Docker file:
+
+docker image build -t customnginx . 
+
+The order of the commands is extremelly important for the cache...
+In the top change the least
+In the bottom change the most 
+
+# Building images - Extending official images
+
+in the path: dockerfile/sample-2/
+
+docker image build -t nginx-with-html .
+docker container run -p 80:80 --rm nginx-with-html
+
+docker image tag nginx-with-html:latest cavargas40/nginx-with-html:latest
+
+Which flag would you pass to specify a docker build referencing a file other than the default 'Dockerfile'?
+The -f command is used to specify a dockerfile, with an alias of --file
+
+Which Dockerfile stanza (Command) is best to use for changing the directory in a Dockerfile?
+WORKDIR
+
+ASSIGNMENT
+# Build Your Own Image
+
+dockerfile/assignment
+I should run a node.js app
+
+docker image build -t testnode .
+docker container run --rm -p 80:3000 testnode
+docker tag testnode cavargas40/testing-node
+docker push cavargas40/testing-node
+
+docker image ls
+docker image rm cavargas40/testing-node 
+docker container run --rm -p 80:3000 cavargas40/testing-node
+
+docker image prune
+-Remove all dangling images. If -a is specified, will also remove all images not referenced by any container.
+ docker image prune -a 
+-remove all unused images
+
+docker system prune 
+-will clean up everything
+
+
