@@ -1,0 +1,101 @@
+# Docker Compose
+
+-Why: configure relationships between containers
+-Why: save our docker container run settings in easy-to-read file
+-Why: create one-liner developer environment startups
+-Comprised of 2 separate but related things
+    1. YAML-formatted file that describes our solution options for:
+        -containers
+        -networks
+        -volumes
+    2. A CLI tool docker-compose used for local dev/test automation with those YAML files.
+
+docker-compose.yml
+-Compose YAML format has it's own versions: 1, 2, 2.1, 3, 3.1
+-YAML file can be used with docker-compose command for local docker automation or...
+-with Docker directly in production with Swarm (as of v1.13)
+-docker-compose --help
+-docker-compose.yml is default filename, but can be used with docker-compose -f
+
+compose/sample-1
+
+https://docs.docker.com/compose/compose-file/
+
+# docker-compose CLI
+
+-CLI tool comes with Docker for Windows / Mac, but separate download for Linux.
+-Not a production-grade tool but ideal for local development and test
+-Two most common commands are:
+   docker compose up
+   -setup volumes/networks and start all containers
+   docker-compose down
+   -stop all containers and remove cont/vol/net
+
+-If all your projects had a Dockerfile and docker-compose.yml the "new developer onboarding" would be:
+   git clone github.com/some/software
+   docker-compose up
+
+compose/sample-2
+docker-compose up
+docker-compose up -d
+
+docker-compose logs
+docker-compose logs | grep "AH00558:"
+docker-compose ps
+docker-compose down
+
+ASSIGNMENT:
+# Writing a compose file
+
+-Build a basic compose file for a Drupal content management system website. Docker hub is your friend
+-Use the drupal image along with the postgres image
+-Use ports to expose Drupal on 8080 so you can localhost:8080
+-Be sure to set POSTGRES_PASSWORD for postgres
+-Walk though Drupal setup via browser
+-Tip: Drupal assumes DB is localhost, but it's service name
+-Extra Credit: Use volumes to store Drupal unique data
+
+compose/assignment
+
+docker-compose up
+docker-compose down -v  
+-this command delete the volumes...
+
+# Using compose to Build
+
+-Compose can also build your custom images
+-Will build them with docker-compose up if not found in cache
+-Also rebuild with docker-compose build
+-Great for complex builds that have lots of vars or build args
+
+compose/sample-3
+
+docker-compose up
+docker-compose down
+docker-compose down --rmi local
+--remove local images that have been built
+
+ASSIGNMENT:
+
+# Image building with compose - Build and Run Compose
+
+-"Build custom Drupal image for local testing"
+-Compose isn't just for developers. Testing apps is easy/fun!
+-Maybe your learning Drupal admin, or are a software tester
+-Start with compose file from previous assignment
+-Make your Dockerfile and docker-compose.yml in dir compose/assignment-2
+-Use the drupal image along with the postgres image as before
+-Use README.md in that dir for details
+
+compose/assignment-2
+
+-after doing
+docker-compose up
+docker-compose down
+
+-and run again
+docker-compose up
+-the data keeps intact because of the volumes 
+
+
+
