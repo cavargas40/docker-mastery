@@ -1,0 +1,103 @@
+# Swarm Mode
+
+Built-in orchestration
+
+## Containers Everywhere = New Problems
+
+-How do we automate container lifecycle?
+-How can we easily scale out/in/up/down?
+-How can we ensure our containers are re-created if they fail?
+-How can we replace containers without downtime (blue/green deploy)?
+-How can we create cross-node virtual networks?
+-How can we ensure only trusted servers run our containers?
+-How can we store secrets, keys, passwords and get them to the right containers (and only that container)?
+
+## Swarm Mode: Built-in Orchestration
+
+-Swarm mode is a clustering solution built inside Docker
+-Not related to Swarm "classic" for pre-1.12 versions
+-Added in 1.12 (Summer 2016) via SmarmKit toolkit
+-Enhanced in 1.13 (January 2017) via Stacks and Secrets
+-Not enable by default, new commands once enabled:
+   -docker swarm
+   -docker node
+   -docker service
+   -docker stack
+   -docker secret
+
+Swarm Concepts (Managers, Workers)
+[(3 nginx replicas) swarm manager] (Service) -> [[nginx.(1,2,3)](Task) [nginx:latest](Container)] (available node)
+
+## Swarm Services: Creating your first service
+
+docker info
+-Swarm: inactive
+
+docker swarm init
+-Swarm initialized: current node (a0mx2dvr0rbnxxikupylo2cdx) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-3c92jt88ptd3xmifzvias4r7q0emcznyhjgw6wrxyvw4100hev-02xmgeacbhxy63wcub0dn9hog 192.168.0.33:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+## docker swarm init: What just happened?
+- Lots of PKI and security automation
+   - Root Signing Certificate created for our Swarm
+   - Certificate is issued for first Manager node
+   - Join tokens are created
+- Raft Database created to store root CA, configs and secrets
+   - Encrypted by default on disk (1.13+)
+   - No need for another key/value system to hold orchestration/secrets
+   - Replicates logs amongst Managers via mutual TLS in "Control plane"
+
+docker node ls 
+docker node --help
+docker swarm --help
+docker service --help
+
+docker service create alpine ping 8.8.8.8
+docker service ls
+docker service ps boring_zhukovsky
+docker service update p6aeqw --replicas 3
+
+docker update --help
+docker service update --help
+docker service update p6aeqw --replicas 3
+
+docker service ls 
+-replicas 2/3, after some seconds 
+
+docker service ls
+-replicas 3/3
+
+docker service ps boring_zhukovsky
+-this shows the history of the service about each replica.
+
+docker service rm boring_zhukovsky
+
+# Create a Swarm Cluster - Creating 3-Node Swarm: Host Options
+
+https://labs.play-with-docker.com/
+
+To create the Swarms
+
+## node1
+docker swarm init --advertise-addr 192.168.0.48
+docker node ls
+docker node update --role manager node2
+docker swarm join-token manager
+docker swarm ls
+docker service create --replicas 3 alpine ping 8.8.8.8
+docker node ps
+docker node ps node2
+docker node ps node3
+docker service ps zen_mendel
+
+## node2
+docker swarm join --token SWMTKN-1-6c22ugnne1yladrdyn7uygxyh0vbr9lw3lhlrbo9haetlsr939-7xje0mfffg6jpqdj0euvtbs4g 192.168.0.48:2377
+
+
+## node 3
+docker swarm join --token SWMTKN-1-6c22ugnne1yladrdyn7uygxyh0vbr9lw3lhlrbo9haetlsr939-1wo73rozmw9nl2acqh3ro1jzs 192.168.0.48:2377
