@@ -1,0 +1,145 @@
+# Container Registries
+
+- An image registry need to be part of your container plan
+- More Docker Hub details including auto-build
+- How Docker Store (store.docker.com) is different then Hub
+- How Docker Cloud (cloud.docker.com) is different then Hub
+- Use new Swarms feature in Cloud to connect Mac/Win to Swarm
+- Install and use Docker Registry as private image store
+- 3rd Party registry options
+
+# Docker Hub - Digging Deeper
+
+- The most popular public image registry
+- It's really Docker Registry plus lightweight image building
+- Link Github /Bitbucket to Hub and auto-build images on commit
+- Chain image building together
+
+hub.docker.com -> Docker Registry plus simple image Building
+
+## Running Docker Registry
+- A private image registry for your network
+- Part of the docker/distribution Github repo
+- The de facto in private container registries
+- Not as full featured as Hub or others, no web UI, basic auth only
+- At its core: a web API and storage system, written in Go
+- Storage supports local, S3 / Azure / Alibaba / Google Cloud and OpenStack Swift
+- Look in section resources for links to:
+        - Secure your registry with TLS
+        - Storage cleanup via Garbage Collection
+        - Enable Hub caching via "'--registry mirror" 
+             - The Hub: Simply refers to Docker Hub
+
+## Run a Private Docker Registry
+- Run the registry image on default port 5000
+- Re-tag an existing image and push it to your new registry
+- Remove that image from local cache and pull it from new registry
+- Re-create registry using bind mount and see how it stores data
+
+### Registry and Proper TLS
+- "Secure by Default": Docker won't talk to registry without HTTPS
+- Except, localhost(127.0.0.0/8)
+- For remote self-signed TLS, enable "insecure-registry" in engine
+
+docker container run -d -p 5000:5000  --name registry registry
+docker container ls
+docker pull hello-world
+docker run hello-world
+docker tag hello-world 127.0.0.1:5000/hello-world
+docker image ls
+docker push 127.0.0.1:5000/hello-world
+docker image remove hello-world
+docker image remove -f 127.0.0.1:5000/hello-world  
+docker image ls
+docker pull 127.0.0.1:5000/hello-world
+docker container kill registry
+docker container rm registry
+docker container run -d -p 5000:5000 --name registry -v $(pwd)/registry-data:/var/lib/registry registry
+ll registry-data
+docker push 127.0.0.1:5000/hello-world
+brew install tree
+tree registry-data
+
+
+## Run a Private Docker Registry
+- Run the registry image:
+   - docker container run -d -p 5000:5000 --name registry registry
+- Re-tag an existing image and push it to your new registry
+   - docker tag hello-world 127.0.0.1:5000/hello-world
+   - docker push 127.0.0.1:5000/hello-world
+- Remove that image from local cache and pull it from new registry
+   - docker image remove hello-world
+   - docker image remove 127.0.0.1:5000/hello-world
+   - docker pull 127.0.0.1:5000/hello-world
+- Re-create registry using bind mount and see how it stores data
+   - docker container run -d -p 5000:5000 --name registry -v $(pwd)/registry-data:/var/lib/registry registry
+
+Remember to Clean Up!
+
+# Assignment: Secure Docker Registry With TLS and Authentication
+The default registry install is rather bare bones, and is open by default, meaning anyone can push and pull images.  You'll likely want to at least add TLS to it so you can work with it easily via HTTPS, and then also add some basic authentication.  
+
+These aren't actually that hard to setup, but do require some commands.  You can learn the basics by creating a self-signed certificate for HTTPS, and then enabling htpasswd  auth, which you'll add users too with basic cli commands.
+
+For this assignment you'll use Play With Docker, a great resource for web-based docker testing and also has a library of labs built by Docker Captains and others, and supported by Docker Inc. 
+
+I'd like you to do the Part 2 and 3 of "Docker Registry for Linux" for this assignment. You can use their text to do this assignment on your own machine, or jump back to their Part 1 and run the container on their infrastructure  using their web-based interface to a real docker engine and learn how "PWD" works!
+
+For more extra credit labs, look through their growing list: http://training.play-with-docker.com/
+
+## Using Registry with Swarm
+
+- Works the same way as localhost
+- Because of Routing Mesh, all nodes can see 127.0.0.1:5000
+- Remember to decide how to store images (volume driver)
+
+navigate to https://labs.play-with-docker.com/
+
+then in the template select 5 managers and no workers
+#### manager 1
+docker node ls
+docker service create --name registry --publish 5000:5000 registry
+docker service ps registry
+- in the top of the window click on the port 5000. and add to the url: 
+http://ip172-18-0-41-br087itim9m000ciadc0-5000.direct.labs.play-with-docker.com/v2/_catalog
+- you'll be able to check this response: 
+{
+"repositories": []
+}
+
+docker pull hello-world
+docker tag hello-world 127.0.0.1:5000/hello-world
+docker push 127.0.0.1:5000/hello-world
+
+- after the push the name of the repo is displayed in the last object ()
+just refresh the window of the link to the registry:
+{
+  "repositories": [
+    "hello-world"
+  ]
+}
+
+docker pull nginx
+docker tag nginx 127.0.0.1:5000/nginx
+docker push 127.0.0.1:5000/nginx
+docker service create --name nginx -p 80:80 --replicas 5 --detach=false 127.0.0.1:5000/nginx
+docker service ps nginx
+
+## Private Docker Registry with Swarm
+- Works the same way as localhost
+- Because of Routing Mesh, all nodes can see 127.0.0.1:5000
+- Remember to decide how to store images (volume driver)
+- NOTE: All nodes must be able to access images
+- ProTip: Use a hosted SaaS registry if possible
+
+
+## Third Party Image Registries
+I've mentioned Docker Hub, Docker Enterprise Edition DTR (Docker Trusted Registry), and Docker Registry as three options for storing your images, but there are many 3rd party options out there.
+
+Quay.io is a popular choice, and is very comparable to Docker Hub as a cloud-based image registry.  Sysdig did a Docker Usage Report in April 2017 based off their users that shows Quay as the most popular cloud-based choice.
+
+If you're on AWS, Azure, or Google Cloud, they all have their own registry options that are well integrated with their toolset.
+
+If you want a self-hosted option, there's Docker EE, Quay Enterprise, and also GitLab, which comes with GitLab Container Registry, among others.
+
+There's a much larger list of registries over at the Awesome Docker list.
