@@ -57,7 +57,4 @@ ECS AWS = Orchestration
   - Picking solutions isn't 100% rational
   - Trendly, will benefit your career
   - CIO/CTO Checkbox
-- 
-
-
 
