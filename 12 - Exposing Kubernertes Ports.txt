@@ -1,0 +1,99 @@
+# Exposing Pods with Services - Defining the four service types
+
+## Exposing Containers
+- kubectl expose - creates a service for existing pods
+- A service is a stable address for pod(s)
+- If we want to connect pod(s), we need a service
+- CoreDNS allows us to resolve services by name
+- There are different types of services
+  - ClusterIP
+  - NodePort
+  - LoadBalancer
+  - ExternalName
+
+## Basic Service Types
+### ClusterIP (default) (Good in the Cluster)
+  - Single, internal virtual IP allocated
+  - Only reachable from within cluster (nodes and pods)
+  - Pods can reach service on apps port number
+
+### NodePort
+  - High port allocated on earch node
+  - Port is open on every node's IP
+  - Anyone can connect (if they can reach node)
+  - Other pods need to be updated to this port
+- These services are always available in Kubernetes
+
+### LoadBalancer (Cloud)
+  - Controls a Load Balancer endpoint external to the cluster
+  - Only available when infra providers gives you a LB (AWS ELB, etc)
+  - Creates NodePort+ClusterIP services, tells LB to send to NodePort
+
+### ExternalName 
+  - Adds CNAME DNS record to CoreDNS only
+  - Not used for Pods, but for giving pods a DNS name to use for something outside Kubernetes
+
+- Kubernetes Ingress: We'll learn later.
+
+# Creating a ClusterIP Service
+
+- Open two shell windows so we can watch this
+  > kubectl get pods -w
+- In second window, lets start a simple http server using sample code
+  > kubectl create deployment httpenv --image=bretfisher/httpenv
+- Scale it to 5 replicas
+  > kubectl scale deployment/httpenv --replicas=5
+- Let's create a ClusterIP service (default)
+  > kubectl expose deployment/httpenv --port 8888
+
+## Inspecting ClusterIp Service
+- Look up what IP was allocated
+  > kubectl get service
+- Remember this IP is cluster internal only, how do we curl it?
+- If you're on Docker Desktop (Host OS is not container OS)
+  > kubectl run --generator=run-prod/v1 tmp-shell --rm -it --image bretfisher/netshoot -- bash
+  > curl httpenv:8888
+- If you're on Linux host
+  > curl [ip of service]:8888
+
+## Create a NodePort Service
+
+> kubectl get all
+- Let's expose a NodePort so we can access it via the host IP (including locahost on Windows/Linux/macOS)
+  > kubectl expose deployment/httpenv --port 8888 --name httpenv-np --type NodePort
+
+- Did you know that a NodePort service also creates a ClusterIP?
+- These three service types are additive, each one creates the ones above it:
+  - ClusterIP
+  - NodePort
+  - LoadBalancer
+
+  > kubectl get services
+  > curl localhost:31542
+
+## Add a LoadBalancer Service
+
+- If you're on Docker Desktop, it provides a built-in LoadBalancer that publishes the --port on localhost
+  > kubectl expose deployment/httpenv --port 8888 --name httpenv-lb --type LoadBalancer
+  > curl localhost:8888
+
+- If you're on kubeadm, minikube, or microk8s
+  - No built-in LB
+  - You can still run the command, it'll just stay at "pending" (but its NodePort works)
+
+## Cleanup
+
+- Let's remove the Services and Deployment
+  > kubectl delete service/httpenv service/httpenv-np
+  > kubectl delete service/httpenv-lb deployment/httpenv
+
+# Kubernetes Service DNS - Basics of CoreDNS
+- Starting with 1.11, internal DNS is provided by CoreDNS
+- Like Swarm, this is DNS-Based Service Discovery
+- So far we've been using hostnames to access Services
+  > curl <hostname>
+- But that only works for Services in the same Namespace
+  > kubectl get namespaces
+- Services also have FQDN
+  > curl <hostname>.<namespace>.svc.cluster.local
+ 
